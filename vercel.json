@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/league/:slug", "destination": "/public.html" },
+    { "source": "/register/:slug", "destination": "/register.html" },
+    { "source": "/(.*)", "destination": "/$1" }
+  ]
+}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FieldHQ — Player Registration</title>
+<link rel="stylesheet" href="src/css/main.css">
+<style>
+  body { background: var(--bg); display: flex; flex-direction: column; min-height: 100vh; }
+  .reg-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .reg-wrap { max-width: 540px; margin: 0 auto; padding: 40px 20px; width: 100%; }
+  .reg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .reg-card-header { padding: 28px 32px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, rgba(0,229,160,0.05) 0%, transparent 100%); }
+  .reg-card-body { padding: 28px 32px; }
+  .success-screen { text-align: center; padding: 48px 32px; }
+  .success-icon { font-size: 56px; margin-bottom: 16px; }
+  .success-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 28px; text-transform: uppercase; margin-bottom: 8px; color: var(--accent); }
+  .success-sub { color: var(--muted); font-size: 14px; line-height: 1.6; }
+  @media (max-width: 600px) { .reg-card-body, .reg-card-header { padding: 20px; } }
+</style>
+</head>
+<body>
+
+<nav class="reg-nav">
+  <div class="logo-text" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:var(--text)">Field<span style="color:var(--accent)">HQ</span></div>
+  <a href="public.html" style="font-size:13px;color:var(--muted);text-decoration:none">← View League Page</a>
+</nav>
+
+<div class="reg-wrap">
+  <div class="reg-card">
+
+    <!-- SUCCESS STATE (hidden initially) -->
+    <div id="successScreen" style="display:none">
+      <div class="success-screen">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">You're Registered!</div>
+        <div class="success-sub" id="successMsg">Welcome to the league. Your coach will be in touch with next steps.</div>
+        <div style="margin-top:28px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <a href="public.html" class="btn btn-primary" style="text-decoration:none">View League Standings</a>
+          <button class="btn btn-ghost" onclick="registerAnother()">Register Another Player</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM STATE -->
+    <div id="formScreen">
+      <div class="reg-card-header">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:26px;text-transform:uppercase;margin-bottom:6px" id="regLeagueName">Spring Season 2025</div>
+        <div style="font-size:13px;color:var(--muted)">Complete the form below to register as a player.</div>
+        <div style="margin-top:14px">
+          <div class="step-indicators">
+            <div class="step-dot done" id="dot1"></div>
+            <div class="step-dot" id="dot2"></div>
+            <div class="step-dot" id="dot3"></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px" id="stepLabel">Step 1 of 3 — Personal Info</div>
+        </div>
+      </div>
+
+      <div class="reg-card-body">
+
+        <!-- STEP 1: Personal Info -->
+        <div class="reg-step active" id="step1">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">First Name *</label><input class="form-input" id="regFirst" placeholder="First name" autocomplete="given-name"></div>
+            <div class="form-group"><label class="form-label">Last Name *</label><input class="form-input" id="regLast" placeholder="Last name" autocomplete="family-name"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Email Address *</label><input class="form-input" id="regEmail" placeholder="your@email.com" type="email" autocomplete="email"></div>
+          <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="regPhone" placeholder="(555) 000-0000" type="tel" autocomplete="tel"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:4px">
+            <button class="btn btn-primary" onclick="nextStep(1)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Team & Position -->
+        <div class="reg-step" id="step2">
+          <div class="form-group"><label class="form-label">Select Team *</label><select class="form-input" id="regTeam"></select></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Preferred Position</label><input class="form-input" id="regPosition" placeholder="Forward, Goalkeeper..."></div>
+            <div class="form-group"><label class="form-label">Preferred Jersey #</label><input class="form-input" id="regNumber" placeholder="#" type="number" min="1" max="99"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Experience Level</label>
+            <select class="form-input" id="regExperience">
+              <option value="beginner">Beginner — Just starting out</option>
+              <option value="recreational" selected>Recreational — Play for fun</option>
+              <option value="intermediate">Intermediate — Some competitive experience</option>
+              <option value="advanced">Advanced — Competitive / travel experience</option>
+            </select>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <button class="btn btn-ghost" onclick="prevStep(2)">← Back</button>
+            <button class="btn btn-primary" onclick="nextStep(2)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Emergency Contact & Confirm -->
+        <div class="reg-step" id="step3">
+          <div style="background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.15);border-radius:8px;padding:16px;margin-bottom:20px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-weight:600;margin-bottom:4px">Almost done!</div>
+            <div style="font-size:13px;color:var(--muted)">Emergency contact info helps us reach someone if needed during games or practices.</div>
+          </div>
+          <div class="form-group"><label class="form-label">Emergency Contact Name</label><input class="form-input" id="regEmergencyName" placeholder="Full name"></div>
+          <div class="form-group"><label class="form-label">Emergency Contact Phone</label><input class="form-input" id="regEmergencyPhone" placeholder="(555) 000-0000" type="tel"></div>
+          <div class="form-group">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--muted);line-height:1.5">
+              <input type="checkbox" id="regConsent" style="margin-top:2px;accent-color:var(--accent)">
+              I agree to the league rules and confirm the information above is accurate.
+            </label>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <button class="btn btn-ghost" onclick="prevStep(3)">← Back</button>
+            <button class="btn btn-primary" onclick="submitRegistration()">Complete Registration ✓</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--muted)">
+    Powered by <strong style="color:var(--accent)">FieldHQ</strong> &nbsp;·&nbsp; Questions? Contact your league admin.
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ <span id="toastMsg"></span></div>
+
+<script src="src/js/data.js"></script>
+<script>
+let currentStep = 1;
+
+function init() {
+  document.getElementById('regLeagueName').textContent = FieldHQ.state.league.name || 'Spring Season 2025';
+  document.getElementById('regTeam').innerHTML = FieldHQ.state.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+function nextStep(from) {
+  if (from === 1) {
+    if (!document.getElementById('regFirst').value.trim() || !document.getElementById('regLast').value.trim() || !document.getElementById('regEmail').value.trim()) {
+      showToast('Please fill in required fields', 'error'); return;
+    }
+  }
+  if (from === 2) {
+    if (!document.getElementById('regTeam').value) { showToast('Please select a team', 'error'); return; }
+  }
+  setStep(from + 1);
+}
+
+function prevStep(from) { setStep(from - 1); }
+
+function setStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.reg-step').forEach((s,i) => s.classList.toggle('active', i+1 === n));
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('dot'+i);
+    dot.classList.toggle('done', i <= n);
+  });
+  const labels = ['Step 1 of 3 — Personal Info', 'Step 2 of 3 — Team & Position', 'Step 3 of 3 — Emergency Contact'];
+  document.getElementById('stepLabel').textContent = labels[n-1];
+}
+
+function submitRegistration() {
+  if (!document.getElementById('regConsent').checked) { showToast('Please agree to the league rules', 'error'); return; }
+
+  const data = {
+    first: document.getElementById('regFirst').value.trim(),
+    last:  document.getElementById('regLast').value.trim(),
+    email: document.getElementById('regEmail').value.trim(),
+    phone: document.getElementById('regPhone').value.trim(),
+    teamId: document.getElementById('regTeam').value,
+    position: document.getElementById('regPosition').value.trim() || 'Player',
+    number: document.getElementById('regNumber').value || '?',
+    emergencyContact: document.getElementById('regEmergencyName').value.trim(),
+    emergencyPhone: document.getElementById('regEmergencyPhone').value.trim(),
+    experience: document.getElementById('regExperience').value,
+  };
+
+  FieldHQ.registerPlayer(data);
+
+  const team = FieldHQ.teamById(parseInt(data.teamId));
+  document.getElementById('successMsg').textContent = `Welcome to ${team?.name || 'the league'}, ${data.first}! Your registration is confirmed. Your coach will be in touch with schedule details and next steps.`;
+
+  document.getElementById('formScreen').style.display = 'none';
+  document.getElementById('successScreen').style.display = 'block';
+}
+
+function registerAnother() {
+  document.getElementById('formScreen').style.display = 'block';
+  document.getElementById('successScreen').style.display = 'none';
+  ['regFirst','regLast','regEmail','regPhone','regPosition','regNumber','regEmergencyName','regEmergencyPhone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('regConsent').checked = false;
+  setStep(1);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FieldHQ — Admin</title>
+<link rel="stylesheet" href="src/css/main.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo"><div class="logo-text">Field<span>HQ</span></div></div>
+  <div class="league-selector" onclick="openModal('leagueModal')">
+    <div class="league-label">Current League</div>
+    <div class="league-name" id="currentLeagueName">Spring Season 2025</div>
+  </div>
+  <nav>
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">⚡</span> Dashboard</div>
+    <div class="nav-section">Management</div>
+    <div class="nav-item" onclick="showPage('roster',this)"><span class="nav-icon">👥</span> Roster</div>
+    <div class="nav-item" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span> Schedule</div>
+    <div class="nav-item" onclick="showPage('standings',this)"><span class="nav-icon">🏆</span> Standings</div>
+    <div class="nav-item" onclick="showPage('announcements',this)"><span class="nav-icon">📢</span> Announcements</div>
+    <div class="nav-section">League</div>
+    <div class="nav-item" onclick="showPage('registration',this)"><span class="nav-icon">📋</span> Registration</div>
+    <div class="nav-item" onclick="openPublicPage()"><span class="nav-icon">🌐</span> Public Page ↗</div>
+  </nav>
+  <div class="sidebar-footer"><span class="avatar">AD</span> Admin <span style="float:right;font-size:11px;background:rgba(0,229,160,0.1);color:var(--accent);padding:2px 6px;border-radius:4px;">Admin</span></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="openModal('leagueModal')">⚙ League Settings</button>
+      <button class="btn btn-primary" id="mainCta" onclick="handleCta()">+ Add Team</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card green"><div class="stat-label">Teams</div><div class="stat-value" id="statTeams">0</div><div class="stat-sub">This season</div></div>
+        <div class="stat-card blue"><div class="stat-label">Players</div><div class="stat-value" id="statPlayers">0</div><div class="stat-sub">Registered</div></div>
+        <div class="stat-card orange"><div class="stat-label">Games</div><div class="stat-value" id="statGames">0</div><div class="stat-sub" id="statGamesSub">Scheduled</div></div>
+        <div class="stat-card purple"><div class="stat-label">Announcements</div><div class="stat-value" id="statAnns">0</div><div class="stat-sub">Total posted</div></div>
+      </div>
+      <div class="three-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Standings</div>
+            <a href="#" style="font-size:12px;color:var(--accent);text-decoration:none;" onclick="showPage('standings',document.querySelectorAll('.nav-item')[4])">View All</a>
+          </div>
+          <table><thead><tr><th>#</th><th>Team</th><th>W-L</th><th>Pts</th></tr></thead><tbody id="dashStandings"></tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Upcoming Games</div></div>
+          <div id="dashGames"></div>
+        </div>
+      </div>
+      <div style="margin-top:20px;" class="card">
+        <div class="card-header"><div class="card-title">Recent Announcements</div></div>
+        <div id="dashAnnouncements"></div>
+      </div>
+    </div>
+
+    <!-- ROSTER -->
+    <div id="page-roster" class="page">
+      <div class="filter-bar">
+        <input class="search-bar" placeholder="🔍  Search players..." oninput="filterRoster(this.value)" id="rosterSearch">
+        <select class="select-input" onchange="filterRosterTeam(this.value)" id="teamFilter"><option value="">All Teams</option></select>
+        <button class="btn btn-primary" onclick="openAddPlayer()">+ Add Player</button>
+      </div>
+      <div id="rosterContent"></div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div id="page-schedule" class="page">
+      <div class="filter-bar">
+        <div class="cal-nav" style="flex:1">
+          <button class="btn btn-ghost" onclick="changeMonth(-1)">← Prev</button>
+          <div class="cal-nav-title" id="calTitle"></div>
+          <button class="btn btn-ghost" onclick="changeMonth(1)">Next →</button>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('gameModal')">+ Add Game</button>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div style="padding:16px 20px;">
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title" id="scheduleListTitle">All Games</div></div>
+        <div id="scheduleList"></div>
+      </div>
+    </div>
+
+    <!-- STANDINGS -->
+    <div id="page-standings" class="page">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">League Standings</div>
+          <span class="badge badge-green">Live</span>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>T</th><th>Pts</th><th>Win %</th><th>Coach</th></tr></thead>
+          <tbody id="fullStandings"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div id="page-announcements" class="page">
+      <div class="card" style="margin-bottom:20px;padding:20px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;text-transform:uppercase;margin-bottom:14px;">Post Announcement</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;" id="annTypePills">
+          <button class="type-pill active-green" onclick="selectAnnType('general',this)">📣 General</button>
+          <button class="type-pill" onclick="selectAnnType('game',this)">⚽ Game Update</button>
+          <button class="type-pill" onclick="selectAnnType('alert',this)">⚠️ Alert</button>
+        </div>
+        <input class="form-input" id="annTitle" placeholder="Announcement title..." style="margin-bottom:10px;">
+        <textarea class="form-input" id="annBody" placeholder="Write your message to the league..."></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+          <button class="btn btn-primary" onclick="postAnnouncement()">Post to League</button>
+        </div>
+      </div>
+      <div class="section-header"><div class="section-title">All Announcements</div></div>
+      <div class="card"><div id="announcementList"></div></div>
+    </div>
+
+    <!-- REGISTRATION -->
+    <div id="page-registration" class="page">
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><div class="card-title">Registration Link</div></div>
+        <div style="padding:20px;">
+          <p style="font-size:14px;color:var(--muted);margin-bottom:14px;">Share this link with players so they can register themselves directly — no manual data entry needed.</p>
+          <div class="share-box">
+            <span class="share-url" id="regUrl">https://fieldhq.app/register/spring-2025</span>
+            <button class="btn btn-primary" onclick="copyRegLink()" style="flex-shrink:0;">Copy Link</button>
+            <button class="btn btn-ghost" onclick="window.open('register.html','_blank')" style="flex-shrink:0;">Preview</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Registered Players</div>
+          <span class="badge badge-blue" id="regCount">0 Players</span>
+        </div>
+        <table>
+          <thead><tr><th>Player</th><th>Team</th><th>Position</th><th>Registered</th><th>Status</th><th></th></tr></thead>
+          <tbody id="regTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- Team Modal -->
+<div class="modal-overlay" id="teamModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add New Team</div><button class="modal-close" onclick="closeModal('teamModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Team Name</label><input class="form-input" id="newTeamName" placeholder="e.g. Thunder FC"></div>
+        <div class="form-group"><label class="form-label">Team Color</label><input type="color" class="form-input" id="newTeamColor" value="#00e5a0" style="height:42px;cursor:pointer;"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Coach Name</label><input class="form-input" id="newTeamCoach" placeholder="Coach full name"></div>
+      <div class="form-group"><label class="form-label">Division / Age Group</label><input class="form-input" id="newTeamDiv" placeholder="e.g. U14, Adult Rec, Open"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('teamModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addTeam()">Create Team</button>
+    </div>
+  </div>
+</div>
+
+<!-- Player Modal -->
+<div class="modal-overlay" id="playerModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add Player</div><button class="modal-close" onclick="closeModal('playerModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="playerFirst" placeholder="First"></div>
+        <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="playerLast" placeholder="Last"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Jersey #</label><input class="form-input" id="playerNumber" placeholder="#" type="number"></div>
+        <div class="form-group"><label class="form-label">Position</label><input class="form-input" id="playerPosition" placeholder="Forward, Pitcher..."></div>
+      </div>
+      <div class="form-group"><label class="form-label">Team</label><select class="form-input" id="playerTeam"></select></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="playerEmail" placeholder="player@email.com" type="email"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('playerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addPlayer()">Add Player</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Modal -->
+<div class="modal-overlay" id="gameModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add Game</div><button class="modal-close" onclick="closeModal('gameModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Home Team</label><select class="form-input" id="gameHome"></select></div>
+        <div class="form-group"><label class="form-label">Away Team</label><select class="form-input" id="gameAway"></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="gameDate" type="date"></div>
+        <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="gameTime" type="time" value="10:00"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Location / Field</label><input class="form-input" id="gameLocation" placeholder="e.g. Field 1, Central Park"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('gameModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addGame()">Add Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- Score Modal -->
+<div class="modal-overlay" id="scoreModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Enter Score</div><button class="modal-close" onclick="closeModal('scoreModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:20px;font-size:14px;color:var(--muted)" id="scoreGameLabel"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" id="scoreHomeLabel">Home Score</label><input class="form-input" id="scoreHome" type="number" min="0" value="0" style="font-size:24px;text-align:center;font-weight:700;"></div>
+        <div class="form-group"><label class="form-label" id="scoreAwayLabel">Away Score</label><input class="form-input" id="scoreAway" type="number" min="0" value="0" style="font-size:24px;text-align:center;font-weight:700;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('scoreModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveScore()">Save Score</button>
+    </div>
+  </div>
+</div>
+
+<!-- League Modal -->
+<div class="modal-overlay" id="leagueModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">League Settings</div><button class="modal-close" onclick="closeModal('leagueModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">League Name</label><input class="form-input" id="leagueName" placeholder="e.g. Spring Soccer 2025"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sport</label><input class="form-input" id="leagueSport" placeholder="Soccer, Basketball..."></div>
+        <div class="form-group"><label class="form-label">Season Year</label><input class="form-input" id="leagueYear" type="number" value="2025"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('leagueModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLeagueSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ <span id="toastMsg"></span></div>
+
+<script src="src/js/data.js"></script>
+<script>
+// =============================================
+// NAVIGATION
+// =============================================
+const pageTitles = { dashboard:'Dashboard', roster:'Roster', schedule:'Schedule', standings:'Standings', announcements:'Announcements', registration:'Registration' };
+const pageCtas   = { dashboard:'+ Add Team', roster:'+ Add Player', schedule:'+ Add Game', standings:null, announcements:null, registration:null };
+let currentPage = 'dashboard';
+
+function showPage(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+  currentPage = page;
+  document.getElementById('pageTitle').textContent = pageTitles[page] || page;
+  const cta = document.getElementById('mainCta');
+  if (pageCtas[page]) { cta.style.display=''; cta.textContent = pageCtas[page]; }
+  else { cta.style.display='none'; }
+  const renders = { dashboard: renderDashboard, roster: renderRoster, schedule: renderSchedule, standings: renderStandings, announcements: renderAnnouncements, registration: renderRegistration };
+  if (renders[page]) renders[page]();
+}
+
+function handleCta() {
+  if (currentPage === 'dashboard' || currentPage === 'standings') openModal('teamModal');
+  else if (currentPage === 'roster') openAddPlayer();
+  else if (currentPage === 'schedule') { populateGameTeams(); openModal('gameModal'); }
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+// =============================================
+// DASHBOARD
+// =============================================
+function renderDashboard() {
+  const s = FieldHQ.state;
+  document.getElementById('statTeams').textContent = s.teams.length;
+  document.getElementById('statPlayers').textContent = s.players.length;
+  document.getElementById('statGames').textContent = s.games.length;
+  document.getElementById('statAnns').textContent = s.announcements.length;
+
+  const standing = FieldHQ.sortedStandings();
+  document.getElementById('dashStandings').innerHTML = standing.slice(0,5).map((t,i) => `
+    <tr>
+      <td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td>
+      <td><span class="team-badge"><span class="team-dot" style="background:${t.color}"></span>${t.name}</span></td>
+      <td><span class="record">${t.w}-${t.l}${t.t>0?'-'+t.t:''}</span></td>
+      <td><strong style="color:var(--accent)">${FieldHQ.pts(t)}</strong></td>
+    </tr>`).join('');
+
+  const upcoming = s.games.filter(g => g.status === 'scheduled').slice(0,4);
+  document.getElementById('dashGames').innerHTML = upcoming.length ? upcoming.map(g => {
+    const home = FieldHQ.teamById(g.home), away = FieldHQ.teamById(g.away);
+    if (!home || !away) return '';
+    return `<div class="game-item">
+      <div class="game-teams">
+        <div class="game-vs">${home.name} <span style="color:var(--muted);font-weight:400">vs</span> ${away.name}</div>
+        <div class="game-meta">📅 ${formatDate(g.date)} · ${formatTime(g.time)} · 📍 ${g.location}</div>
+      </div>
+      <span class="badge badge-blue">Upcoming</span>
+    </div>`;
+  }).join('') : '<div class="empty-state" style="padding:24px"><div class="empty-sub">No upcoming games scheduled</div></div>';
+
+  const annTypes = { general:['green','📣'], game:['blue','⚽'], alert:['orange','⚠️'] };
+  document.getElementById('dashAnnouncements').innerHTML = s.announcements.slice(0,3).map(a => {
+    const [cls, icon] = annTypes[a.type] || ['gray','📌'];
+    return `<div class="ann-item"><div class="ann-icon ${cls}">${icon}</div><div><div class="ann-title">${a.title}</div><div class="ann-body">${a.body.substring(0,100)}${a.body.length>100?'...':''}</div><div class="ann-meta">${a.date}</div></div></div>`;
+  }).join('') || '<div class="empty-state" style="padding:24px"><div class="empty-sub">No announcements yet</div></div>';
+}
+
+// =============================================
+// ROSTER
+// =============================================
+function renderRoster(filter='', teamFilter='') {
+  const sel = document.getElementById('teamFilter');
+  sel.innerHTML = '<option value="">All Teams</option>' + FieldHQ.state.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  if (teamFilter) sel.value = teamFilter;
+
+  let html = '';
+  FieldHQ.state.teams.forEach(team => {
+    if (teamFilter && team.id != teamFilter) return;
+    const tp = FieldHQ.state.players.filter(p => {
+      if (p.team !== team.id) return false;
+      if (filter) { const q = filter.toLowerCase(); return (p.first+' '+p.last).toLowerCase().includes(q); }
+      return true;
+    });
+    if (filter && tp.length === 0) return;
+
+    html += `<div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:12px;height:12px;border-radius:50%;background:${team.color}"></div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;text-transform:uppercase">${team.name}</span>
+          <span class="badge badge-gray">${tp.length} Players</span>
+          <span class="badge badge-gray">${team.coach}</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;" onclick="openAddPlayerFor(${team.id})">+ Add Player</button>
+          <button class="btn btn-danger" style="font-size:12px;padding:6px 12px;" onclick="removeTeam(${team.id})">Remove Team</button>
+        </div>
+      </div>
+      <div class="card"><table><thead><tr><th>#</th><th>Player</th><th>Position</th><th>Email</th><th>Status</th><th></th></tr></thead><tbody>`;
+
+    if (tp.length === 0) {
+      html += `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">No players yet</td></tr>`;
+    } else {
+      tp.forEach(p => {
+        const statusBadge = p.status === 'registered' ? 'badge-blue' : 'badge-green';
+        html += `<tr>
+          <td><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--muted)">#${p.number}</span></td>
+          <td><span class="player-avatar" style="background:${team.color}">${p.first[0]}${p.last[0]}</span><strong>${p.first} ${p.last}</strong></td>
+          <td><span class="tag">${p.position}</span></td>
+          <td style="color:var(--muted);font-size:13px;">${p.email||'—'}</td>
+          <td><span class="badge ${statusBadge}">${p.status||'active'}</span></td>
+          <td><button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="removePlayer(${p.id})">Remove</button></td>
+        </tr>`;
+      });
+    }
+    html += `</tbody></table></div></div>`;
+  });
+
+  if (!html) html = `<div class="empty-state"><div class="empty-icon">🏟️</div><div class="empty-title">No teams yet</div><div class="empty-sub">Add your first team to get started</div></div>`;
+  document.getElementById('rosterContent').innerHTML = html;
+}
+
+function filterRoster(v) { renderRoster(v, document.getElementById('teamFilter').value); }
+function filterRosterTeam(v) { renderRoster(document.getElementById('rosterSearch').value, v); }
+
+function openAddPlayer() { populatePlayerTeamSelect(); openModal('playerModal'); }
+function openAddPlayerFor(id) { populatePlayerTeamSelect(); document.getElementById('playerTeam').value = id; openModal('playerModal'); }
+
+function populatePlayerTeamSelect() {
+  document.getElementById('playerTeam').innerHTML = FieldHQ.state.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+function addTeam() {
+  const name = document.getElementById('newTeamName').value.trim();
+  if (!name) return;
+  FieldHQ.addTeam({ name, color: document.getElementById('newTeamColor').value, coach: document.getElementById('newTeamCoach').value.trim()||'TBD', division: document.getElementById('newTeamDiv').value.trim()||'Open' });
+  closeModal('teamModal');
+  ['newTeamName','newTeamCoach','newTeamDiv'].forEach(id => document.getElementById(id).value='');
+  showToast('Team created!');
+  renderDashboard();
+}
+
+function removeTeam(id) {
+  if (!confirm('Remove this team and all its players?')) return;
+  FieldHQ.removeTeam(id);
+  renderRoster();
+  showToast('Team removed', 'error');
+}
+
+function addPlayer() {
+  const first = document.getElementById('playerFirst').value.trim();
+  const last  = document.getElementById('playerLast').value.trim();
+  if (!first || !last) return;
+  FieldHQ.addPlayer({ first, last, number: document.getElementById('playerNumber').value||'?', position: document.getElementById('playerPosition').value.trim()||'Player', team: parseInt(document.getElementById('playerTeam').value), email: document.getElementById('playerEmail').value.trim() });
+  closeModal('playerModal');
+  ['playerFirst','playerLast','playerNumber','playerPosition','playerEmail'].forEach(id => document.getElementById(id).value='');
+  showToast('Player added!');
+  renderRoster(document.getElementById('rosterSearch').value, document.getElementById('teamFilter').value);
+}
+
+function removePlayer(id) {
+  FieldHQ.removePlayer(id);
+  renderRoster(document.getElementById('rosterSearch').value, document.getElementById('teamFilter').value);
+  showToast('Player removed', 'error');
+}
+
+// =============================================
+// SCHEDULE / CALENDAR
+// =============================================
+let calYear, calMonth;
+
+function renderSchedule() {
+  const now = new Date();
+  if (!calYear) calYear = now.getFullYear();
+  if (calMonth === undefined) calMonth = now.getMonth();
+  renderCalendar();
+  renderGameList();
+}
+
+function changeMonth(dir) { calMonth += dir; if (calMonth > 11) { calMonth=0; calYear++; } if (calMonth < 0) { calMonth=11; calYear--; } renderCalendar(); renderGameList(); }
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calTitle').textContent = months[calMonth] + ' ' + calYear;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const games = FieldHQ.gamesForMonth(calYear, calMonth);
+  const today = new Date();
+
+  let html = days.map(d => `<div class="cal-header">${d}</div>`).join('');
+
+  for (let i=0; i<firstDay; i++) {
+    const d = daysInPrev - firstDay + 1 + i;
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  for (let d=1; d<=daysInMonth; d++) {
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayGames = games.filter(g => g.date === dateStr);
+    const gameHtml = dayGames.slice(0,3).map(g => {
+      const home = FieldHQ.teamById(g.home), away = FieldHQ.teamById(g.away);
+      const cls = g.status==='final' ? 'orange' : 'blue';
+      return `<div class="cal-game ${cls}" title="${home?.name||'?'} vs ${away?.name||'?'}">${home?.name?.split(' ')[0]||'?'} v ${away?.name?.split(' ')[0]||'?'}</div>`;
+    }).join('');
+    html += `<div class="cal-day ${isToday?'today':''}"><div class="cal-day-num">${d}</div>${gameHtml}</div>`;
+  }
+
+  const totalCells = firstDay + daysInMonth;
+  const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let i=1; i<=remaining; i++) html += `<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
+
+  document.getElementById('calendarGrid').innerHTML = html;
+}
+
+function renderGameList() {
+  const monthGames = FieldHQ.gamesForMonth(calYear, calMonth).sort((a,b) => new Date(a.date+' '+a.time) - new Date(b.date+' '+b.time));
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('scheduleListTitle').textContent = months[calMonth] + ' Games';
+
+  if (!monthGames.length) { document.getElementById('scheduleList').innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No games this month</div><div class="empty-sub">Add games using the button above</div></div>'; return; }
+
+  document.getElementById('scheduleList').innerHTML = monthGames.map(g => {
+    const home = FieldHQ.teamById(g.home), away = FieldHQ.teamById(g.away);
+    if (!home || !away) return '';
+    const isFinal = g.status === 'final';
+    return `<div class="game-item">
+      <div style="text-align:center;min-width:50px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">${formatDateShort(g.date)}</div>
+        <div style="font-size:13px;color:var(--muted)">${formatTime(g.time)}</div>
+      </div>
+      <div style="width:3px;height:40px;background:${isFinal?'var(--warn)':'var(--accent2)'};border-radius:2px;"></div>
+      <div class="game-teams" style="flex:1">
+        <div class="game-vs">
+          <span style="color:${home.color}">${home.name}</span>
+          ${isFinal ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;color:var(--text);margin:0 8px">${g.homeScore} — ${g.awayScore}</span>` : '<span style="color:var(--muted);margin:0 8px;font-weight:400">vs</span>'}
+          <span style="color:${away.color}">${away.name}</span>
+        </div>
+        <div class="game-meta">📍 ${g.location}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge ${isFinal?'badge-orange':'badge-blue'}">${isFinal?'Final':'Scheduled'}</span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openScoreModal(${g.id})">${isFinal?'Edit Score':'Enter Score'}</button>
+        <button class="btn btn-danger" style="font-size:11px;padding:5px 10px;" onclick="removeGame(${g.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateGameTeams() {
+  const opts = FieldHQ.state.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('gameHome').innerHTML = opts;
+  document.getElementById('gameAway').innerHTML = opts;
+  if (FieldHQ.state.teams.length > 1) document.getElementById('gameAway').selectedIndex = 1;
+}
+
+function addGame() {
+  const home = parseInt(document.getElementById('gameHome').value);
+  const away = parseInt(document.getElementById('gameAway').value);
+  const date = document.getElementById('gameDate').value;
+  const time = document.getElementById('gameTime').value;
+  const location = document.getElementById('gameLocation').value.trim();
+  if (!date || home === away) { showToast('Please select two different teams and a date', 'error'); return; }
+  FieldHQ.addGame({ home, away, date, time, location: location||'TBD' });
+  closeModal('gameModal');
+  ['gameDate','gameLocation'].forEach(id => document.getElementById(id).value='');
+  showToast('Game added!');
+  renderCalendar(); renderGameList();
+}
+
+let scoreGameId = null;
+function openScoreModal(id) {
+  scoreGameId = id;
+  const g = FieldHQ.state.games.find(g => g.id === id);
+  const home = FieldHQ.teamById(g.home), away = FieldHQ.teamById(g.away);
+  document.getElementById('scoreGameLabel').textContent = `${home?.name} vs ${away?.name} — ${formatDate(g.date)}`;
+  document.getElementById('scoreHomeLabel').textContent = home?.name + ' Score';
+  document.getElementById('scoreAwayLabel').textContent = away?.name + ' Score';
+  document.getElementById('scoreHome').value = g.homeScore ?? 0;
+  document.getElementById('scoreAway').value = g.awayScore ?? 0;
+  openModal('scoreModal');
+}
+
+function saveScore() {
+  FieldHQ.updateScore(scoreGameId, document.getElementById('scoreHome').value, document.getElementById('scoreAway').value);
+  closeModal('scoreModal');
+  showToast('Score saved!');
+  renderCalendar(); renderGameList();
+}
+
+function removeGame(id) {
+  FieldHQ.removeGame(id);
+  renderCalendar(); renderGameList();
+  showToast('Game removed', 'error');
+}
+
+// =============================================
+// STANDINGS
+// =============================================
+function renderStandings() {
+  document.getElementById('fullStandings').innerHTML = FieldHQ.sortedStandings().map((t,i) => {
+    const total = t.w+t.l+t.t;
+    const pct = total ? Math.round((t.w/total)*100) : 0;
+    return `<tr>
+      <td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td>
+      <td><span class="team-badge"><span class="team-dot" style="background:${t.color}"></span>${t.name}</span></td>
+      <td><strong style="color:var(--accent)">${t.w}</strong></td>
+      <td style="color:var(--warn)">${t.l}</td>
+      <td style="color:var(--muted)">${t.t}</td>
+      <td><strong style="font-family:'Barlow Condensed',sans-serif;font-size:18px">${FieldHQ.pts(t)}</strong></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="win-bar-bg"><div class="win-bar" style="width:${pct}%"></div></div><span style="font-size:12px;color:var(--muted)">${pct}%</span></div></td>
+      <td style="font-size:13px;color:var(--muted)">${t.coach}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =============================================
+// ANNOUNCEMENTS
+// =============================================
+let currentAnnType = 'general';
+
+function selectAnnType(type, el) {
+  currentAnnType = type;
+  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active-green','active-blue','active-orange'));
+  const cls = type==='general'?'active-green':type==='game'?'active-blue':'active-orange';
+  el.classList.add(cls);
+}
+
+function postAnnouncement() {
+  const title = document.getElementById('annTitle').value.trim();
+  const body  = document.getElementById('annBody').value.trim();
+  if (!title||!body) { showToast('Please fill in both fields', 'error'); return; }
+  FieldHQ.addAnnouncement({ type: currentAnnType, title, body });
+  document.getElementById('annTitle').value = '';
+  document.getElementById('annBody').value = '';
+  showToast('Announcement posted!');
+  renderAnnouncements();
+}
+
+function renderAnnouncements() {
+  const annTypes = { general:['green','📣'], game:['blue','⚽'], alert:['orange','⚠️'] };
+  const list = FieldHQ.state.announcements;
+  if (!list.length) { document.getElementById('announcementList').innerHTML='<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No announcements yet</div></div>'; return; }
+  document.getElementById('announcementList').innerHTML = list.map(a => {
+    const [cls,icon] = annTypes[a.type]||['gray','📌'];
+    const tb = a.type==='general'?'badge-green':a.type==='game'?'badge-blue':'badge-orange';
+    return `<div class="ann-item" style="align-items:flex-start">
+      <div class="ann-icon ${cls}">${icon}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div class="ann-title">${a.title}</div><span class="badge ${tb}">${a.type}</span></div>
+        <div class="ann-body">${a.body}</div>
+        <div class="ann-meta">Posted ${a.date} by ${a.author}</div>
+      </div>
+      <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;flex-shrink:0;" onclick="deleteAnn(${a.id})">Delete</button>
+    </div>`;
+  }).join('');
+}
+
+function deleteAnn(id) { FieldHQ.removeAnnouncement(id); renderAnnouncements(); showToast('Deleted', 'error'); }
+
+// =============================================
+// REGISTRATION
+// =============================================
+function renderRegistration() {
+  const reg = FieldHQ.state.players.filter(p => p.status === 'registered');
+  document.getElementById('regCount').textContent = reg.length + ' Players';
+  document.getElementById('regTable').innerHTML = reg.length ? reg.map(p => {
+    const team = FieldHQ.teamById(p.team);
+    const date = p.registeredAt ? new Date(p.registeredAt).toLocaleDateString() : 'Manual';
+    return `<tr>
+      <td><span class="player-avatar" style="background:${team?.color||'#888'};display:inline-flex">${p.first[0]}${p.last[0]}</span><strong>${p.first} ${p.last}</strong><br><small style="color:var(--muted)">${p.email||''}</small></td>
+      <td><span class="team-badge"><span class="team-dot" style="background:${team?.color||'#888'}"></span>${team?.name||'Unassigned'}</span></td>
+      <td><span class="tag">${p.position}</span></td>
+      <td style="color:var(--muted);font-size:13px">${date}</td>
+      <td><span class="badge badge-blue">Registered</span></td>
+      <td><button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="removePlayer(${p.id});renderRegistration()">Remove</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">No registrations yet — share the registration link!</td></tr>';
+}
+
+function copyRegLink() {
+  navigator.clipboard.writeText('https://fieldhq.app/register/spring-2025').then(() => showToast('Link copied!')).catch(() => showToast('Copy the URL manually'));
+}
+
+// =============================================
+// LEAGUE SETTINGS
+// =============================================
+function saveLeagueSettings() {
+  const name = document.getElementById('leagueName').value.trim();
+  if (name) { FieldHQ.state.league.name = name; document.getElementById('currentLeagueName').textContent = name; }
+  FieldHQ.state.league.sport = document.getElementById('leagueSport').value.trim();
+  FieldHQ.state.league.year  = document.getElementById('leagueYear').value;
+  FieldHQ.save();
+  closeModal('leagueModal');
+  showToast('Settings saved!');
+}
+
+function openPublicPage() { window.open('public.html', '_blank'); }
+
+// =============================================
+// UTILS
+// =============================================
+function formatDate(d) { if (!d) return '—'; const dt = new Date(d+'T12:00'); return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+function formatDateShort(d) { if (!d) return '—'; const dt = new Date(d+'T12:00'); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function formatTime(t) { if (!t) return ''; const [h,m] = t.split(':'); const hr = parseInt(h); return `${hr > 12 ? hr-12 : hr||12}:${m} ${hr>=12?'PM':'AM'}`; }
+
+// =============================================
+// INIT
+// =============================================
+renderDashboard();
+document.getElementById('currentLeagueName').textContent = FieldHQ.state.league.name || 'Spring Season 2025';
+</script>
+</body>
+</html>

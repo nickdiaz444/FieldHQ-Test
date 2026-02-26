@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FieldHQ — League Page</title>
+<link rel="stylesheet" href="src/css/main.css">
+<style>
+  body { background: var(--bg); }
+  .pub-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .pub-nav .logo-text { font-size: 22px; }
+  .pub-badge { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.3); color: var(--accent); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  @media (max-width: 600px) { .public-hero { padding: 28px 20px; } .public-content { padding: 20px; } .pub-nav { padding: 0 20px; } }
+</style>
+</head>
+<body>
+
+<nav class="pub-nav">
+  <div class="logo-text">Field<span>HQ</span></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="pub-badge">🟢 Live Season</span>
+    <a href="register.html" class="btn btn-primary" style="text-decoration:none;font-size:13px">Register Now</a>
+  </div>
+</nav>
+
+<div class="public-hero">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="public-league-name" id="pubLeagueName">Spring Season 2025</div>
+    <div class="public-meta" id="pubMeta">⚽ Soccer &nbsp;·&nbsp; 📅 2025 &nbsp;·&nbsp; <span id="pubTeamCount">8</span> Teams &nbsp;·&nbsp; <span id="pubPlayerCount">8</span> Players</div>
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="copyShareLink()" class="btn btn-ghost" style="font-size:13px">🔗 Share League Page</button>
+      <a href="register.html" class="btn btn-primary" style="text-decoration:none;font-size:13px">📋 Player Registration</a>
+    </div>
+  </div>
+</div>
+
+<div class="public-content">
+  <div class="public-tabs">
+    <div class="pub-tab active" onclick="switchTab('standings',this)">Standings</div>
+    <div class="pub-tab" onclick="switchTab('schedule',this)">Schedule</div>
+    <div class="pub-tab" onclick="switchTab('roster',this)">Roster</div>
+    <div class="pub-tab" onclick="switchTab('news',this)">News</div>
+  </div>
+
+  <!-- STANDINGS TAB -->
+  <div class="pub-tab-content active" id="tab-standings">
+    <div class="card">
+      <table>
+        <thead><tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>T</th><th>Pts</th><th>Win %</th></tr></thead>
+        <tbody id="pubStandings"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SCHEDULE TAB -->
+  <div class="pub-tab-content" id="tab-schedule">
+    <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+      <div class="stat-card blue" style="flex:1;min-width:140px">
+        <div class="stat-label">Total Games</div>
+        <div class="stat-value" id="pubTotalGames" style="font-size:28px">0</div>
+      </div>
+      <div class="stat-card green" style="flex:1;min-width:140px">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value" id="pubFinalGames" style="font-size:28px">0</div>
+      </div>
+      <div class="stat-card orange" style="flex:1;min-width:140px">
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value" id="pubScheduledGames" style="font-size:28px">0</div>
+      </div>
+    </div>
+    <div class="card"><div id="pubSchedule"></div></div>
+  </div>
+
+  <!-- ROSTER TAB -->
+  <div class="pub-tab-content" id="tab-roster">
+    <div id="pubRoster"></div>
+  </div>
+
+  <!-- NEWS TAB -->
+  <div class="pub-tab-content" id="tab-news">
+    <div class="card"><div id="pubNews"></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ <span id="toastMsg"></span></div>
+
+<script src="src/js/data.js"></script>
+<script>
+function switchTab(name, el) {
+  document.querySelectorAll('.pub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.pub-tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function init() {
+  const s = FieldHQ.state;
+  document.getElementById('pubLeagueName').textContent = s.league.name || 'Spring Season 2025';
+  document.getElementById('pubMeta').innerHTML = `⚽ ${s.league.sport||'Soccer'} &nbsp;·&nbsp; 📅 ${s.league.year||2025} &nbsp;·&nbsp; ${s.teams.length} Teams &nbsp;·&nbsp; ${s.players.length} Players`;
+
+  // Standings
+  document.getElementById('pubStandings').innerHTML = FieldHQ.sortedStandings().map((t,i) => {
+    const total = t.w+t.l+t.t;
+    const pct = total ? Math.round((t.w/total)*100) : 0;
+    return `<tr>
+      <td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td>
+      <td><span class="team-badge"><span class="team-dot" style="background:${t.color}"></span>${t.name}</span></td>
+      <td><strong style="color:var(--accent)">${t.w}</strong></td>
+      <td style="color:var(--warn)">${t.l}</td>
+      <td style="color:var(--muted)">${t.t}</td>
+      <td><strong style="font-family:'Barlow Condensed',sans-serif;font-size:18px">${FieldHQ.pts(t)}</strong></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="win-bar-bg"><div class="win-bar" style="width:${pct}%"></div></div><span style="font-size:12px;color:var(--muted)">${pct}%</span></div></td>
+    </tr>`;
+  }).join('');
+
+  // Schedule
+  const games = [...s.games].sort((a,b) => new Date(a.date+' '+a.time) - new Date(b.date+' '+b.time));
+  const final = games.filter(g => g.status === 'final');
+  const scheduled = games.filter(g => g.status === 'scheduled');
+  document.getElementById('pubTotalGames').textContent = games.length;
+  document.getElementById('pubFinalGames').textContent = final.length;
+  document.getElementById('pubScheduledGames').textContent = scheduled.length;
+
+  document.getElementById('pubSchedule').innerHTML = games.length ? games.map(g => {
+    const home = FieldHQ.teamById(g.home), away = FieldHQ.teamById(g.away);
+    if (!home||!away) return '';
+    const isFinal = g.status === 'final';
+    return `<div class="game-item">
+      <div style="min-width:60px;text-align:center">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">${formatDateShort(g.date)}</div>
+        <div style="font-size:12px;color:var(--muted)">${formatTime(g.time)}</div>
+      </div>
+      <div style="width:3px;height:36px;background:${isFinal?'var(--warn)':'var(--accent2)'};border-radius:2px"></div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:15px">
+          <span style="color:${home.color}">${home.name}</span>
+          ${isFinal ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;color:var(--text);margin:0 8px">${g.homeScore} — ${g.awayScore}</span>` : '<span style="color:var(--muted);margin:0 8px;font-weight:400">vs</span>'}
+          <span style="color:${away.color}">${away.name}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">📍 ${g.location}</div>
+      </div>
+      <span class="badge ${isFinal?'badge-orange':'badge-blue'}">${isFinal?'Final':'Scheduled'}</span>
+    </div>`;
+  }).join('') : '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No games scheduled yet</div></div>';
+
+  // Roster
+  let rosterHtml = '';
+  s.teams.forEach(team => {
+    const tp = FieldHQ.playersForTeam(team.id);
+    rosterHtml += `<div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:12px;height:12px;border-radius:50%;background:${team.color}"></div>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;text-transform:uppercase">${team.name}</span>
+        <span class="badge badge-gray">${tp.length} Players</span>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>#</th><th>Player</th><th>Position</th></tr></thead>
+        <tbody>${tp.map(p => `<tr>
+          <td><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--muted)">#${p.number}</span></td>
+          <td><span class="player-avatar" style="background:${team.color}">${p.first[0]}${p.last[0]}</span>${p.first} ${p.last}</td>
+          <td><span class="tag">${p.position}</span></td>
+        </tr>`).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:16px">No players yet</td></tr>'}
+        </tbody>
+      </table></div>
+    </div>`;
+  });
+  document.getElementById('pubRoster').innerHTML = rosterHtml || '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No teams yet</div></div>';
+
+  // News
+  const annTypes = { general:['green','📣'], game:['blue','⚽'], alert:['orange','⚠️'] };
+  document.getElementById('pubNews').innerHTML = s.announcements.length ? s.announcements.map(a => {
+    const [cls,icon] = annTypes[a.type]||['gray','📌'];
+    return `<div class="ann-item"><div class="ann-icon ${cls}">${icon}</div><div><div class="ann-title">${a.title}</div><div class="ann-body">${a.body}</div><div class="ann-meta">${a.date}</div></div></div>`;
+  }).join('') : '<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No news yet</div></div>';
+}
+
+function copyShareLink() {
+  navigator.clipboard.writeText(window.location.href).then(() => showToast('Link copied!')).catch(() => showToast('Copy from address bar'));
+}
+
+function formatDateShort(d) { if (!d) return '—'; const dt = new Date(d+'T12:00'); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function formatTime(t) { if (!t) return ''; const [h,m] = t.split(':'); const hr = parseInt(h); return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; }
+
+init();
+</script>
+</body>
+</html>
